@@ -2,8 +2,14 @@
 <html lang="sr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Kućni Budžet</title>
+<meta name="theme-color" content="#008000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kućni Budžet">
+<link rel="apple-touch-icon" id="appleTouchIcon">
+<link rel="manifest" id="pwaManifest">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
@@ -12,26 +18,26 @@
   --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.14);
   --text:#1a1a18;--text2:#6b6b66;--text3:#9b9b94;
   --green:#008000;--green-bg:#e6f5e6;
-  --yellow:#c49a00;--yellow-bg:#fdf8e1;
+  --yellow:#D4A000;--yellow-bg:#fdf8e1;
   --red:#c0392b;--red-bg:#fdf0ee;
   --purple:#6d4faa;--purple-bg:#f0ebfb;
   --blue:#185fa5;--blue-bg:#e8f0fb;
   --amber:#ba7517;--amber-bg:#fef3e0;
   --radius:10px;--radius-lg:14px;--shadow:0 1px 4px rgba(0,0,0,.06);
-  --chart-jovan:#008000;--chart-jelena:#FFF700;
+  --chart-jovan:#008000;--chart-jelena:#D4A000;
 }
 .dark {
   --bg:#141414;--surface:#1e1e1e;--surface2:#272727;--surface3:#313131;
   --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
   --text:#e8e8e4;--text2:#a0a09a;--text3:#6a6a64;
   --green:#2dbd8a;--green-bg:#0d2e22;
-  --yellow:#d4aa10;--yellow-bg:#2a2410;
+  --yellow:#F0BC00;--yellow-bg:#2a2410;
   --red:#e05445;--red-bg:#2e1410;
   --purple:#9b7de0;--purple-bg:#1e1630;
   --blue:#4a90d9;--blue-bg:#0e1e35;
   --amber:#d48a20;--amber-bg:#2a1e08;
   --shadow:0 1px 6px rgba(0,0,0,.3);
-  --chart-jovan:#00b300;--chart-jelena:#FFE500;
+  --chart-jovan:#00b300;--chart-jelena:#F0BC00;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Georgia,serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;transition:background .25s,color .25s}
@@ -921,18 +927,26 @@ let incChart,expChart,flowChart;
 function renderCharts(incUSD,mandUSD,optUSD,savUSD,planUSD,jovUSD,wifeUSD,balUSD,depositMode){
   const c=S.currency,cv=v=>Math.round(fromUSD(v,c));
   const dark=S.dark,gridC=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)',tickC=dark?'#666':'#bbb';
-  const jColor=dark?'#00b300':'#008000',jeColor='#FFF700';
+  const jColor=dark?'#00b300':'#008000',jeColor=dark?'#F0BC00':'#D4A000';
 
   if(incChart)incChart.destroy();if(expChart)expChart.destroy();if(flowChart)flowChart.destroy();
 
+  // Normal mode: [Jovan, Jelena] → [green, gold]
+  // Deposit mode: [Jelena, Jovanov doprinos] → [gold, green]
   const iData=depositMode?[cv(wifeUSD),cv(500)]:[cv(jovUSD),cv(wifeUSD)];
   const iLabels=depositMode?['Jelena plata','Jovanov doprinos']:['Jovan','Jelena'];
-  const iColors=[jColor,jeColor];
+  const iColors=depositMode?[jeColor,jColor]:[jColor,jeColor];
   const iTotal=iData.reduce((a,b)=>a+b,0)||1;
   document.getElementById('incLegend').innerHTML=iLabels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${iColors[i]};border:1px solid rgba(0,0,0,.15)"></div>${l}: ${iData[i].toLocaleString('sr-RS')}</div>`).join('');
   const doughnutDLPlugin={
     display:ctx=>(ctx.dataset.data[ctx.dataIndex]/(iTotal||1))>=0.05,
-    color:dark?'#e8e8e4':'#1a1a18',
+    color:ctx=>{
+      // Jelena slice (index 1 in normal mode, index 0 in deposit mode) is golden yellow — use dark text
+      // Jovan slice is green — use white text
+      const bg=ctx.dataset.backgroundColor[ctx.dataIndex];
+      if(bg==='#D4A000'||bg==='#F0BC00') return '#3a2800';
+      return '#ffffff';
+    },
     font:{size:10,weight:'bold',family:'Georgia,serif'},
     anchor:'center',align:'center',
     formatter:v=>{const abs=Math.abs(v);if(abs>=1000000)return(v/1000000).toFixed(1)+'M';if(abs>=1000)return(v/1000).toFixed(0)+'k';return v.toLocaleString('sr-RS');}
@@ -1091,5 +1105,72 @@ document.getElementById('currSel').value=S.currency||'RSD';
 if(S.ghToken)gistPull();
 loadMonthSnap();fetchRates();
 </script>
+
+<script>
+// ═══════════════ PWA SETUP ═══════════════
+(function(){
+  // Generate SVG icon as data URL
+  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+    <rect width="192" height="192" rx="28" fill="#008000"/>
+    <text x="96" y="82" text-anchor="middle" font-family="Georgia,serif" font-size="62" font-weight="700" fill="white">KB</text>
+    <text x="96" y="148" text-anchor="middle" font-family="Georgia,serif" font-size="46" font-weight="700" fill="white">$</text>
+  </svg>`;
+  const iconUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgIcon);
+  
+  // Set apple touch icon
+  const appleIcon = document.getElementById('appleTouchIcon');
+  if(appleIcon) appleIcon.href = iconUrl;
+
+  // Create and inject manifest
+  const manifest = {
+    name: 'Kućni Budžet',
+    short_name: 'Budžet',
+    description: 'Porodični finansijski dashboard',
+    start_url: window.location.href,
+    display: 'standalone',
+    background_color: '#008000',
+    theme_color: '#008000',
+    orientation: 'portrait-primary',
+    icons: [
+      { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const manifestUrl = URL.createObjectURL(manifestBlob);
+  const manifestLink = document.getElementById('pwaManifest');
+  if(manifestLink) manifestLink.href = manifestUrl;
+
+  // Show install prompt on iOS
+  const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const isInStandaloneMode = window.navigator.standalone;
+  if(isIOS && !isInStandaloneMode){
+    setTimeout(()=>{
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#008000;color:white;padding:12px 16px;font-size:13px;font-family:Georgia,serif;z-index:9999;display:flex;align-items:center;justify-content:space-between;box-shadow:0 -2px 12px rgba(0,0,0,.2)';
+      banner.innerHTML = '<span>Instaliraj app: klikni <strong>Podeli</strong> → <strong>Dodaj na početni ekran</strong></span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;padding:0 4px">×</button>';
+      document.body.appendChild(banner);
+    }, 2500);
+  }
+
+  // Android/Chrome install prompt
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = document.createElement('button');
+    btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#008000;color:white;border:none;border-radius:24px;padding:10px 18px;font-size:13px;font-family:Georgia,serif;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.25);z-index:9998';
+    btn.textContent = '📲 Instaliraj app';
+    btn.onclick = async () => {
+      btn.remove();
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    };
+    document.body.appendChild(btn);
+  });
+})();
+</script>
+
 </body>
 </html>
