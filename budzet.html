@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kućni Budžet</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root {
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f0efe9;--surface3:#e8e7e0;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.14);
+  --text:#1a1a18;--text2:#6b6b66;--text3:#9b9b94;
+  --green:#008000;--green-bg:#e6f5e6;
+  --yellow:#c49a00;--yellow-bg:#fdf8e1;
+  --red:#c0392b;--red-bg:#fdf0ee;
+  --purple:#6d4faa;--purple-bg:#f0ebfb;
+  --blue:#185fa5;--blue-bg:#e8f0fb;
+  --amber:#ba7517;--amber-bg:#fef3e0;
+  --radius:10px;--radius-lg:14px;--shadow:0 1px 4px rgba(0,0,0,.06);
+  --chart-jovan:#008000;--chart-jelena:#FFF700;
+}
+.dark {
+  --bg:#141414;--surface:#1e1e1e;--surface2:#272727;--surface3:#313131;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --text:#e8e8e4;--text2:#a0a09a;--text3:#6a6a64;
+  --green:#2dbd8a;--green-bg:#0d2e22;
+  --yellow:#d4aa10;--yellow-bg:#2a2410;
+  --red:#e05445;--red-bg:#2e1410;
+  --purple:#9b7de0;--purple-bg:#1e1630;
+  --blue:#4a90d9;--blue-bg:#0e1e35;
+  --amber:#d48a20;--amber-bg:#2a1e08;
+  --shadow:0 1px 6px rgba(0,0,0,.3);
+  --chart-jovan:#00b300;--chart-jelena:#FFE500;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;transition:background .25s,color .25s}
+.app{max-width:1240px;margin:0 auto;padding:1.25rem 1rem 3rem}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border2)}
+.header-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-size:20px;font-weight:700;letter-spacing:-.5px;color:var(--text)}
+.logo span{color:var(--green)}
+.mode-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em;border:1px solid}
+.mode-badge.deposit{background:var(--amber-bg);color:var(--amber);border-color:var(--amber)}
+.mode-badge.normal{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.month-nav{display:flex;align-items:center;gap:4px}
+.icon-btn{width:30px;height:30px;border:1px solid var(--border2);border-radius:7px;background:var(--surface);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:background .15s}
+.icon-btn:hover{background:var(--surface2)}
+.month-label{font-size:13px;font-weight:700;min-width:120px;text-align:center;color:var(--text)}
+select,input[type=number],input[type=text],input[type=password]{height:32px;font-size:13px;padding:0 8px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;outline:none;transition:border-color .15s,background .25s,color .25s}
+select:focus,input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,128,0,.15)}
+button{cursor:pointer;font-family:inherit;transition:background .15s}
+.dark-btn{height:30px;padding:0 10px;border:1px solid var(--border2);border-radius:7px;background:var(--surface);color:var(--text2);font-size:12px;display:flex;align-items:center;gap:5px}
+.dark-btn:hover{background:var(--surface2)}
+
+/* TOGGLE */
+.toggle-wrap{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text2)}
+.toggle{position:relative;width:38px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tog-slider{position:absolute;inset:0;background:var(--border2);border-radius:11px;cursor:pointer;transition:.2s}
+.tog-slider:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+input:checked+.tog-slider{background:var(--green)}
+input:checked+.tog-slider:before{transform:translateX(16px)}
+
+/* ALERTS */
+.alert{display:none;align-items:center;gap:10px;border-radius:var(--radius);padding:10px 14px;margin-bottom:.85rem;font-size:13px;border:1px solid}
+.alert-tax{background:var(--amber-bg);color:var(--amber);border-color:var(--amber)}
+.alert-pending{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
+.alert-gist{background:var(--purple-bg);color:var(--purple);border-color:var(--purple)}
+.tax-link{color:var(--amber);font-weight:700;text-decoration:underline}
+
+/* METRICS */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-bottom:1.1rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;box-shadow:var(--shadow)}
+.metric-label{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:700;font-family:Georgia,serif;line-height:1.1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.c-green{color:var(--green)}.c-yellow{color:var(--yellow)}.c-red{color:var(--red)}
+.c-purple{color:var(--purple)}.c-blue{color:var(--blue)}.c-amber{color:var(--amber)}.c-text2{color:var(--text2)}
+
+/* DEPOSIT BAR */
+.deposit-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1.1rem;box-shadow:var(--shadow)}
+.deposit-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;flex-wrap:wrap;gap:4px}
+.deposit-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3)}
+.deposit-pct{font-size:22px;font-weight:700;color:var(--green)}
+.dep-track{height:12px;background:var(--surface2);border-radius:6px;margin-bottom:8px;position:relative;overflow:hidden}
+.dep-fill-confirmed{height:100%;background:linear-gradient(90deg,var(--green),#40c080);border-radius:6px 0 0 6px;position:absolute;left:0;top:0;transition:width .6s ease}
+.dep-fill-pending{height:100%;background:repeating-linear-gradient(90deg,var(--green) 0,var(--green) 6px,transparent 6px,transparent 12px);opacity:.32;position:absolute;top:0;transition:left .6s,width .6s}
+.dep-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:12px;color:var(--text3)}
+.dep-meta span strong{color:var(--text2)}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.1rem}
+@media(max-width:768px){.charts-row{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;box-shadow:var(--shadow)}
+.card-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:11px;color:var(--text2)}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:12px}
+@media(max-width:768px){.main-grid{grid-template-columns:1fr}}
+
+/* EXPENSE LIST */
+.exp-group{margin-bottom:.9rem}
+.exp-group-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);padding:0 0 4px;border-bottom:1px solid var(--border);margin-bottom:3px}
+.exp-row{display:flex;align-items:center;gap:7px;padding:4px 3px;border-radius:6px;transition:opacity .2s,background .1s}
+.exp-row:hover{background:var(--surface2)}
+.exp-row.shaded{opacity:.25}
+.exp-toggle{width:15px;height:15px;cursor:pointer;accent-color:var(--green);flex-shrink:0}
+.exp-toggle:disabled{cursor:default;opacity:.4}
+.exp-name{flex:1;font-size:13px;color:var(--text);line-height:1.3}
+.exp-meta{font-size:10px;color:var(--text3);display:block}
+.exp-amount{font-size:13px;font-weight:700;min-width:95px;text-align:right;font-family:Georgia,serif}
+.exp-amount.mandatory{color:var(--red)}.exp-amount.optional{color:var(--text2)}.exp-amount.savings{color:var(--blue)}
+.obavezno-tag{font-size:9px;font-weight:700;color:var(--red);min-width:14px;text-align:center;letter-spacing:.02em;flex-shrink:0}
+.jovan-contrib-row{display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--green-bg);border:1px dashed var(--green);border-radius:7px;margin-bottom:6px;font-size:12px;color:var(--green);font-weight:600}
+/* activate-this-month button for non-mandatory in deposit mode */
+.activate-btn{font-size:10px;padding:1px 6px;border:1px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text3);white-space:nowrap;flex-shrink:0;height:20px}
+.activate-btn.on{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.activate-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* RIGHT PANEL */
+.right-panel{display:flex;flex-direction:column;gap:10px}
+.inc-field{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.inc-field:last-child{border-bottom:none}
+.inc-label{font-size:12px;color:var(--text2);flex:1;line-height:1.3}
+.inc-tag{font-size:10px;font-style:italic;margin-left:3px}
+.inc-input{width:100px;text-align:right;font-family:Georgia,serif;font-weight:700}
+.inc-computed{font-size:13px;font-weight:700;font-family:Georgia,serif;text-align:right;min-width:100px}
+.section-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+
+/* CALC */
+.calc-btn{width:100%;text-align:left;background:var(--surface2);border:none;border-radius:7px;padding:7px 11px;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.03em;cursor:pointer;margin-top:8px;display:flex;justify-content:space-between}
+.calc-btn:hover{background:var(--surface3)}
+.calc-panel{display:none;margin-top:8px;padding:10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
+.calc-panel.open{display:block}
+.calc-row{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)}
+.calc-row:last-child{border-bottom:none}
+.calc-label{color:var(--text2);flex:1}
+.calc-input{width:90px;height:27px;text-align:right;font-size:12px}
+.calc-result{color:var(--green);font-weight:700;min-width:80px;text-align:right;font-family:Georgia,serif}
+.tier-pill{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700;border:1px solid}
+.tier-none{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.tier-1{background:var(--amber-bg);color:var(--amber);border-color:var(--amber)}
+.tier-2{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow)}
+.tier-3{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.tier-4{background:var(--purple-bg);color:var(--purple);border-color:var(--purple)}
+
+/* PLANNED / PROJECTS */
+.list-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)}
+.list-item:last-child{border-bottom:none}
+.list-item input[type=text]{flex:2;min-width:0;height:28px;font-size:12px}
+.list-item input[type=number]{width:80px;height:28px;font-size:12px;text-align:right;flex-shrink:0}
+.list-item select{height:28px;font-size:12px;width:72px;flex-shrink:0}
+.rm-btn{width:24px;height:24px;border:1px solid var(--border2);border-radius:5px;background:none;color:var(--text3);font-size:14px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;line-height:1}
+.rm-btn:hover{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+.add-btn{font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;margin-top:4px;display:block}
+.list-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:var(--text2);border-top:1px solid var(--border);padding-top:6px}
+
+/* HISTORY */
+.history-card{margin-top:1rem}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px}
+.hist-table th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);padding:4px 8px;border-bottom:1px solid var(--border2)}
+.hist-table td{padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text2);font-family:Georgia,serif}
+.hist-table tr:hover td{background:var(--surface2)}
+
+/* RATE BAR */
+.rate-bar{display:flex;justify-content:flex-end;align-items:center;gap:6px;font-size:11px;color:var(--text3);margin-bottom:.75rem;flex-wrap:wrap}
+.rate-pill{background:var(--surface2);padding:2px 8px;border-radius:10px;border:1px solid var(--border);color:var(--text2)}
+
+/* GIST SETUP */
+.gist-setup{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;margin-bottom:1rem;font-size:13px}
+.gist-setup h3{font-size:13px;margin-bottom:8px;color:var(--text)}
+.gist-input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.gist-input-row input{flex:1;min-width:200px}
+.gist-save-btn{height:32px;padding:0 14px;border:1px solid var(--green);border-radius:7px;background:var(--green-bg);color:var(--green);font-size:13px;font-weight:700}
+.gist-save-btn:hover{background:var(--green);color:white}
+.gist-status{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* PIN OVERLAY */
+.pin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;display:none;align-items:center;justify-content:center}
+.pin-overlay.open{display:flex}
+.pin-box{background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;width:270px;box-shadow:0 8px 40px rgba(0,0,0,.25);border:1px solid var(--border2)}
+.pin-title{font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);text-align:center}
+.pin-dots-row{display:flex;justify-content:center;gap:10px;margin-bottom:14px}
+.pin-dot{width:12px;height:12px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border2);transition:.15s}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue)}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pin-key{height:40px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-size:15px;font-weight:700;font-family:Georgia,serif}
+.pin-key:hover{background:var(--surface2)}
+.pin-msg{font-size:11px;color:var(--text3);text-align:center;margin-top:8px;min-height:16px}
+.pin-msg.error{color:var(--red)}
+.hidden-panel{margin-top:10px;padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
+.hidden-panel label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px}
+.hidden-close{width:100%;margin-top:8px;padding:6px;border:1px solid var(--border2);border-radius:6px;background:none;font-size:12px;color:var(--text2)}
+.hidden-close:hover{background:var(--surface3)}
+/* Private history table inside PIN panel */
+.priv-hist{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.priv-hist th{font-size:10px;color:var(--text3);text-align:left;padding:3px 4px;border-bottom:1px solid var(--border)}
+.priv-hist td{padding:3px 4px;border-bottom:1px solid var(--border);color:var(--text2);font-family:Georgia,serif}
+.priv-hist tfoot td{font-weight:700;color:var(--blue);border-top:1px solid var(--border2)}
+
+.divider{border:none;border-top:1px solid var(--border);margin:8px 0}
+@media(max-width:500px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.header{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- PIN OVERLAY -->
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-box">
+    <div class="pin-title">Privatna alokacija</div>
+    <div class="pin-dots-row">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-keypad">
+      <button class="pin-key" onclick="pk(1)">1</button><button class="pin-key" onclick="pk(2)">2</button><button class="pin-key" onclick="pk(3)">3</button>
+      <button class="pin-key" onclick="pk(4)">4</button><button class="pin-key" onclick="pk(5)">5</button><button class="pin-key" onclick="pk(6)">6</button>
+      <button class="pin-key" onclick="pk(7)">7</button><button class="pin-key" onclick="pk(8)">8</button><button class="pin-key" onclick="pk(9)">9</button>
+      <button class="pin-key" onclick="pk('x')">←</button><button class="pin-key" onclick="pk(0)">0</button><button class="pin-key" onclick="pk('ok')">OK</button>
+    </div>
+    <div class="pin-msg" id="pinMsg"></div>
+    <div id="hiddenPanel" class="hidden-panel" style="display:none">
+      <label>Alokacija (% bruto USD prihoda)</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <input type="number" id="hiddenPct" value="20" min="0" max="50" style="width:60px" onblur="saveHiddenPct()">
+        <span style="font-size:12px;color:var(--text2)">% → <strong id="hiddenAmt" style="color:var(--blue)"></strong></span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-style:italic">Ostaje aktivno i kad je panel zaključan.</div>
+      <hr class="divider">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Istorija alokacija</div>
+      <div style="overflow-x:auto;max-height:160px;overflow-y:auto">
+        <table class="priv-hist" id="privHistTable">
+          <thead><tr><th>Mesec</th><th>Bruto (USD)</th><th>Alocirano (USD)</th></tr></thead>
+          <tbody id="privHistBody"></tbody>
+          <tfoot><tr><td>Ukupno</td><td></td><td id="privHistTotal"></td></tr></tfoot>
+        </table>
+      </div>
+      <button class="hidden-close" onclick="closePinPanel()">Zatvori i zaključaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIST SETUP -->
+<div class="gist-setup" id="gistSetup" style="display:none">
+  <h3>Cloud sinhronizacija (GitHub Gist)</h3>
+  <p style="font-size:12px;color:var(--text2)">Unesi GitHub Personal Access Token. Podaci će biti dostupni sa svih uređaja.<br>
+  GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → New token → izaberi <strong>gist</strong> scope.</p>
+  <div class="gist-input-row">
+    <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <button class="gist-save-btn" onclick="saveGistToken()">Sačuvaj</button>
+  </div>
+  <div class="gist-status" id="gistStatus"></div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Kućni <span>Budžet</span></div>
+    <span class="mode-badge" id="modeBadge">Depozit mod</span>
+  </div>
+  <div class="header-right">
+    <button class="dark-btn" onclick="toggleDark()" id="darkBtn">☾ Tamno</button>
+    <div class="month-nav">
+      <button class="icon-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button class="icon-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="toggle-wrap">
+      <label class="toggle"><input type="checkbox" id="depositToggle" onchange="render()"><span class="tog-slider"></span></label>
+      <span>Depozit mod</span>
+    </div>
+    <select id="currSel" onchange="onCurrChange()">
+      <option value="RSD" selected>RSD</option>
+      <option value="EUR">EUR</option>
+      <option value="USD">USD</option>
+    </select>
+    <button class="icon-btn" onclick="toggleGistSetup()" title="Cloud sinhronizacija">☁</button>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div class="alert alert-tax" id="taxAlert">
+  <span>⚠</span>
+  <span>Porez na firmu dospeva do 15-og: <strong id="taxDueVal"></strong> USD &nbsp;
+    <a class="tax-link" href="https://eservices.rs.ge/Login.aspx?redirect_url=http%3a%2f%2feservices.rs.ge%2fLogin.aspx" target="_blank" rel="noopener">→ Prijavi se na portal</a>
+  </span>
+</div>
+<div class="alert alert-pending" id="pendingAlert">
+  <span>ℹ</span><span>Isplata još nije stigla — očekuje se 25-og.</span>
+</div>
+<div class="alert alert-gist" id="gistSyncAlert" style="display:none">
+  <span>☁</span><span id="gistSyncMsg">Sinhronizacija...</span>
+</div>
+
+<!-- RATE BAR -->
+<div class="rate-bar">
+  <span class="rate-pill" id="rateEUR">Učitavanje...</span>
+  <span class="rate-pill" id="rateRSD"></span>
+  <span style="font-size:10px" id="rateAge"></span>
+</div>
+
+<!-- METRICS -->
+<div class="metrics-grid" id="metricsGrid"></div>
+
+<!-- DEPOSIT BAR -->
+<div class="deposit-card" id="depositSection" style="display:none">
+  <div class="deposit-header">
+    <span class="deposit-title">Napredak ka depozitu — cilj €20.000</span>
+    <span class="deposit-pct" id="depPct">0%</span>
+  </div>
+  <div class="dep-track">
+    <div class="dep-fill-confirmed" id="depFillConf" style="width:0%"></div>
+    <div class="dep-fill-pending" id="depFillPend" style="left:0%;width:0%"></div>
+  </div>
+  <div class="dep-meta" id="depMeta"></div>
+</div>
+
+<!-- CHARTS -->
+<div class="charts-row">
+  <div class="card">
+    <div class="card-title">Prihodi</div>
+    <div style="position:relative;height:175px"><canvas id="incChart" role="img" aria-label="Raspodela prihoda"></canvas></div>
+    <div class="chart-legend" id="incLegend"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Rashodi</div>
+    <div style="position:relative;height:175px"><canvas id="expChart" role="img" aria-label="Raspodela rashoda"></canvas></div>
+    <div class="chart-legend" id="expLegend"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Novčani tok</div>
+    <div style="position:relative;height:175px"><canvas id="flowChart" role="img" aria-label="Novčani tok"></canvas></div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+  <!-- LEFT: EXPENSES -->
+  <div class="card">
+    <div class="section-title">Mesečni rashodi</div>
+    <div id="jovanContribRow" style="display:none" class="jovan-contrib-row">
+      + $500 Jovanov doprinos obaveznim troškovima <span style="font-size:11px;opacity:.7">(depozit mod)</span>
+    </div>
+    <div id="expList"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <!-- INCOME -->
+    <div class="card">
+      <div class="section-title">Prihodi</div>
+      <div class="inc-field">
+        <span class="inc-label">Osnovna plata (USD)</span>
+        <input type="number" class="inc-input" id="incBase" value="3350" onblur="render()">
+      </div>
+      <div class="inc-field">
+        <span class="inc-label">Bonus — prethodni mesec<span class="inc-tag c-amber" id="bonusPendingTag"></span></span>
+        <span class="inc-computed c-green" id="bonusDisplay">$0.00</span>
+      </div>
+      <div class="inc-field">
+        <span class="inc-label">Logo bonus (USD)</span>
+        <input type="number" class="inc-input" id="incLogo" value="0" onblur="render()">
+      </div>
+      <div class="inc-field" id="accelFieldInc" style="display:none">
+        <span class="inc-label">Kvartalni akcelerator<span class="inc-tag c-amber" id="accelPendingTag"></span></span>
+        <span class="inc-computed c-purple" id="accelDisplay">$0.00</span>
+      </div>
+      <div class="inc-field">
+        <span class="inc-label">Jelena — plata (RSD)</span>
+        <input type="number" class="inc-input" id="incWife" value="147000" onblur="render()">
+      </div>
+      <button class="calc-btn" onclick="toggleCalc()">
+        <span>Kalkulator zarade</span><span id="calcArrow">▸</span>
+      </button>
+      <div class="calc-panel" id="calcPanel">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Mesečni bonus</div>
+        <div class="calc-row">
+          <span class="calc-label">Zatvoreni prihod preth. mesec (USD)</span>
+          <input type="number" class="calc-input" id="closedDeals" value="0" onblur="calcBonus()">
+        </div>
+        <div class="calc-row"><span class="calc-label">Mesečni target</span><span class="calc-result">$4,500</span></div>
+        <div class="calc-row"><span class="calc-label">Dostignuće</span><span class="calc-result" id="monthAchPct">0.00%</span></div>
+        <div class="calc-row"><span class="calc-label">100% isplata bonusa</span><span class="calc-result">$3,333</span></div>
+        <div class="calc-row" style="border-bottom:none"><span class="calc-label"><strong>Obračunati bonus</strong></span><span class="calc-result" id="calcBonusResult" style="font-size:14px">$0.00</span></div>
+        <hr class="divider">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Kvartalni akcelerator</div>
+        <div class="calc-row"><span class="calc-label">Kvartal</span><span class="calc-result" id="currentQLabel" style="color:var(--text2)">Q1</span></div>
+        <div class="calc-row"><span class="calc-label">Kvartalni target (100%)</span><span class="calc-result">$13,500</span></div>
+        <div class="calc-row">
+          <span class="calc-label">Dostignuće kvartala (%)</span>
+          <input type="number" class="calc-input" id="qAchPct" value="0" min="0" max="300" onblur="calcAccel()">
+        </div>
+        <div class="calc-row"><span class="calc-label">Nivo akceleratora</span><span id="accelTier" class="tier-pill tier-none">Ispod 50%</span></div>
+        <div class="calc-row" style="border-bottom:none">
+          <span class="calc-label"><strong>Payout akceleratora (USD)</strong></span>
+          <input type="number" class="calc-input" id="accelPayout" value="0" placeholder="Unesi iznos" onblur="applyAccel()">
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-style:italic">Unesi iznos ručno kada dobiješ obračun od firme.</div>
+      </div>
+    </div>
+
+    <!-- PLANNED EXTRAS -->
+    <div class="card">
+      <div class="section-title">Planirani vanredni troškovi</div>
+      <div id="plannedList"></div>
+      <button class="add-btn" onclick="addPlanned()">+ Dodaj trošak</button>
+      <div class="list-footer">
+        <span>Ukupno:</span>
+        <strong class="c-purple" id="plannedTotal">0</strong>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">Oduzima se od depozitnog sefa.</div>
+    </div>
+
+    <!-- PROJECTS -->
+    <div class="card">
+      <div class="section-title">Projekti (Stan / Kuća)</div>
+      <div id="projectList"></div>
+      <button class="add-btn" onclick="addProject()">+ Dodaj projekat</button>
+      <div class="list-footer">
+        <span>Ukupno potrebno:</span>
+        <strong class="c-blue" id="projectTotal">0</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="card history-card">
+  <div class="section-title">Istorija meseci</div>
+  <div style="overflow-x:auto">
+    <table class="hist-table">
+      <thead><tr><th>Mesec</th><th>Prihod (USD)</th><th>Rashodi (USD)</th><th>Bilans (USD)</th><th>Ka depozitu (EUR)</th></tr></thead>
+      <tbody id="histBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+<script>
+// ═══════════════ STATE ═══════════════
+const LS='hb_v4';
+let S={
+  dark:false, rates:{EUR:0.8558,RSD:100.445}, ratesTs:0,
+  pin:null, hiddenPct:20, hiddenActive:false,
+  currentMonth:new Date().getMonth(), currentYear:new Date().getFullYear(),
+  months:{}, depositBaseEUR:6000,
+  plannedItems:[{name:'Krstenje — Noa',amount:500,currency:'EUR',active:true}],
+  projectItems:[{name:'',cost:0,currency:'EUR'}],
+  itemToggles:{}, monthActivations:{},
+  currency:'RSD', ghToken:'', gistId:'',
+  pinUnlocked:false, depositMode:true
+};
+function ls_load(){try{const d=JSON.parse(localStorage.getItem(LS));if(d)S={...S,...d,pinUnlocked:false};}catch(e){}}
+function ls_save(){try{localStorage.setItem(LS,JSON.stringify({...S,pinUnlocked:false}));}catch(e){}}
+ls_load();
+
+// ═══════════════ DARK ═══════════════
+function applyDark(){document.body.classList.toggle('dark',S.dark);document.getElementById('darkBtn').textContent=S.dark?'☀ Svetlo':'☾ Tamno';}
+function toggleDark(){S.dark=!S.dark;ls_save();applyDark();if(lastChartArgs[0]!==undefined)renderCharts(...lastChartArgs);}
+applyDark();
+
+// ═══════════════ GROUPS ══════════════
+const SHADE_IDS=new Set(['jelena-beauty','jovan-grooming','gym','shopping','cinema','gifts','travel','transactions','emergency','rainy','stek','investments','car-loan']);
+const GROUPS=[
+  {id:'fixed-home',label:'Fiksni kućni troškovi',items:[
+    {id:'mortgage',label:'Hipoteka',val:670,cur:'EUR',mandatory:true,depositHide:true},
+    {id:'mortgage-extra',label:'Hipoteka — dodatna otplata',val:450,cur:'EUR',mandatory:false,depositHide:true},
+    {id:'infostan',label:'Infostan',val:1500,cur:'RSD',mandatory:true},
+    {id:'parking',label:'Parking',val:3000,cur:'RSD',mandatory:true},
+    {id:'internet',label:'Internet',val:4000,cur:'RSD',mandatory:true},
+    {id:'phone-parents',label:'Mobilni — Jelenini roditelji',val:3500,cur:'RSD',mandatory:true},
+  ]},
+  {id:'variable-home',label:'Promenljivi kućni troškovi',items:[
+    {id:'groceries',label:'Prodavnica',val:35000,cur:'RSD',mandatory:true},
+    {id:'gas',label:'Gas (grejanje)',val:15000,cur:'RSD',mandatory:true},
+    {id:'electricity',label:'Struja',val:8000,cur:'RSD',mandatory:true},
+    {id:'cosmetics',label:'Kozmetika i hemija',val:4000,cur:'RSD',mandatory:true},
+    {id:'medicine',label:'Lekovi',val:1000,cur:'RSD',mandatory:true},
+    {id:'kids',label:'Deca (pelene, vitamini)',val:5000,cur:'RSD',mandatory:true},
+    {id:'meat',label:'Meso (klanje)',val:10000,cur:'RSD',mandatory:true,meta:'120.000 rsd / god.'},
+    {id:'phone-us',label:'Mobilni — Jovan i Jelena',val:10000,cur:'RSD',mandatory:true},
+  ]},
+  {id:'auto',label:'Auto (mesečno izdvajanje)',items:[
+    {id:'car-reg',label:'Registracija',val:3500,cur:'RSD',mandatory:true,meta:'40.000 rsd / god.'},
+    {id:'car-svc-basic',label:'Mali servis',val:2100,cur:'RSD',mandatory:true,meta:'25.000 rsd / god.'},
+    {id:'car-svc-major',label:'Veliki servis',val:3000,cur:'RSD',mandatory:true,meta:'80.000 rsd / 2,5 god.'},
+    {id:'roadside',label:'Pomoć na putu',val:1000,cur:'RSD',mandatory:true,meta:'12.000 rsd / god.'},
+    {id:'tires',label:'Gume',val:4000,cur:'RSD',mandatory:true,meta:'140.000 rsd / 3 god.'},
+    {id:'car-loan',label:'Kredit za auto',val:0,cur:'RSD',mandatory:false},
+  ]},
+  {id:'annual',label:'Godišnji troškovi (mesečno)',items:[
+    {id:'biz-cards',label:'Inostrane kartice (biznis)',val:25,cur:'EUR',mandatory:true,meta:'300 eur / god.'},
+    {id:'insurance',label:'Osiguranje + stan + porez',val:2000,cur:'RSD',mandatory:true,meta:'24.000 rsd / god.'},
+  ]},
+  {id:'personal',label:'Lični troškovi',items:[
+    {id:'jelena-beauty',label:'Jelena — lepota',val:6000,cur:'RSD',mandatory:false},
+    {id:'jovan-grooming',label:'Jovan — nega',val:3000,cur:'RSD',mandatory:false},
+    {id:'gym',label:'Teretana',val:15000,cur:'RSD',mandatory:false},
+    {id:'shopping',label:'Šoping',val:10000,cur:'RSD',mandatory:false},
+  ]},
+  {id:'subscriptions',label:'Pretplate',items:[
+    {id:'netflix',label:'Netflix',val:15,cur:'EUR',mandatory:true},
+    {id:'tools',label:'ChatGPT / Claude / alati',val:40,cur:'EUR',mandatory:true},
+  ]},
+  {id:'obligations',label:'Obaveze',items:[
+    {id:'cleaning',label:'Žena za čišćenje',val:25000,cur:'RSD',mandatory:true},
+    {id:'card-debt',label:'Rate kartice',val:10000,cur:'RSD',mandatory:true},
+    {id:'company-tax',label:'Porez firme (1% bruto USD)',val:0,cur:'USD',mandatory:true,auto:true},
+    {id:'bank-naknada',label:'Bankarske naknade Intesa',val:500,cur:'RSD',mandatory:true,decoy:true},
+  ]},
+  {id:'lifestyle',label:'Životni stil',items:[
+    {id:'cinema',label:'Bioskop / pozorište',val:5000,cur:'RSD',mandatory:false},
+    {id:'gifts',label:'Pokloni',val:5000,cur:'RSD',mandatory:false},
+    {id:'travel',label:'Putovanja (mesečno)',val:450,cur:'EUR',mandatory:false},
+  ]},
+  {id:'misc',label:'Ostalo',items:[
+    {id:'transactions',label:'Transakcije (razno)',val:10000,cur:'RSD',mandatory:false},
+  ]},
+  {id:'savings',label:'Štednja i investicije',items:[
+    {id:'emergency',label:'Fond za hitne slučajeve',val:600,cur:'EUR',mandatory:false},
+    {id:'rainy',label:'Crni dani',val:600,cur:'EUR',mandatory:false},
+    {id:'stek',label:'Štek (fleksibilna rezerva)',val:0,cur:'EUR',mandatory:false},
+    {id:'investments',label:'Investicije',val:600,cur:'EUR',mandatory:false},
+  ]},
+];
+
+// ═══════════════ RATES ═══════════════
+async function fetchRates(){
+  const now=Date.now();
+  if(S.rates.EUR&&(now-S.ratesTs)<3600000){updateRateBar();render();return;}
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/USD');
+    const d=await r.json();
+    if(d.result==='success'){S.rates={EUR:d.rates.EUR,RSD:d.rates.RSD};S.ratesTs=now;ls_save();}
+  }catch(e){}
+  updateRateBar();render();
+}
+function updateRateBar(){
+  document.getElementById('rateEUR').textContent=`1 USD = €${S.rates.EUR.toFixed(4)}`;
+  document.getElementById('rateRSD').textContent=`1 USD = ${S.rates.RSD.toFixed(4)} RSD`;
+  const mins=S.ratesTs?Math.round((Date.now()-S.ratesTs)/60000):null;
+  document.getElementById('rateAge').textContent=mins!==null?`Kurs ažuriran pre ${mins<60?mins+'min':Math.round(mins/60)+'h'}`:'';
+}
+function toUSD(v,c){return c==='USD'?v:c==='EUR'?v/S.rates.EUR:v/S.rates.RSD;}
+function fromUSD(v,c){return c==='USD'?v:c==='EUR'?v*S.rates.EUR:v*S.rates.RSD;}
+function fmt(usd){const c=S.currency,v=fromUSD(usd,c),n=Math.round(v).toLocaleString('sr-RS');return c==='USD'?'$'+n:c==='EUR'?'€'+n:n+' din';}
+
+// ═══════════════ MONTHS ══════════════
+const MO=['Januar','Februar','Mart','April','Maj','Jun','Jul','Avgust','Septembar','Oktobar','Novembar','Decembar'];
+const ACCEL_MO=new Set([3,6,9,0]);
+function monthKey(){return`${S.currentYear}-${String(S.currentMonth+1).padStart(2,'0')}`;}
+function activationKey(){return monthKey();}
+
+function changeMonth(d){
+  saveMonthSnap();
+  S.currentMonth+=d;
+  if(S.currentMonth>11){S.currentMonth=0;S.currentYear++;}
+  if(S.currentMonth<0){S.currentMonth=11;S.currentYear--;}
+  loadMonthSnap();render();
+}
+
+let lastTotalExpUSD=0,lastDepContribEUR=0;
+
+function saveMonthSnap(){
+  const key=monthKey();
+  S.months[key]={
+    incBase:+document.getElementById('incBase').value||0,
+    incLogo:+document.getElementById('incLogo').value||0,
+    incWife:+document.getElementById('incWife').value||0,
+    closedDeals:+document.getElementById('closedDeals').value||0,
+    qAchPct:+document.getElementById('qAchPct').value||0,
+    accelPayout:computedAccel,bonus:computedBonus,
+    plannedItems:JSON.parse(JSON.stringify(S.plannedItems)),
+    projectItems:JSON.parse(JSON.stringify(S.projectItems)),
+    itemToggles:{...S.itemToggles},
+    monthActivations:{...(S.monthActivations[key]||{})},
+    grossUSD:getGrossUSD(),totalExpUSD:lastTotalExpUSD,depositContrib:lastDepContribEUR
+  };
+  ls_save();gistPush();
+}
+function loadMonthSnap(){
+  const key=monthKey(),m=S.months[key];
+  if(m){
+    document.getElementById('incBase').value=m.incBase||3350;
+    document.getElementById('incLogo').value=m.incLogo||0;
+    document.getElementById('incWife').value=m.incWife||147000;
+    document.getElementById('closedDeals').value=m.closedDeals||0;
+    document.getElementById('qAchPct').value=m.qAchPct||0;
+    document.getElementById('accelPayout').value=m.accelPayout||0;
+    S.plannedItems=m.plannedItems||[];S.projectItems=m.projectItems||[];
+    S.itemToggles=m.itemToggles||{};
+    if(!S.monthActivations)S.monthActivations={};
+    S.monthActivations[key]=m.monthActivations||{};
+    computedAccel=m.accelPayout||0;computedBonus=m.bonus||0;
+    updateBonusDisplay();updateAccelDisplay();calcAccel();
+  }else{
+    document.getElementById('closedDeals').value=0;
+    document.getElementById('qAchPct').value=0;
+    document.getElementById('accelPayout').value=0;
+    computedBonus=0;computedAccel=0;
+    updateBonusDisplay();updateAccelDisplay();
+  }
+}
+
+// ═══════════════ INCOME CALC ═══════════════
+let computedBonus=0,computedAccel=0;
+function calcBonus(){
+  const closed=+document.getElementById('closedDeals').value||0;
+  const pct=closed/4500;computedBonus=pct*3333;
+  document.getElementById('monthAchPct').textContent=(pct*100).toFixed(2)+'%';
+  document.getElementById('calcBonusResult').textContent='$'+computedBonus.toFixed(2);
+  updateBonusDisplay();render();
+}
+// Visible bonus = gross bonus minus hidden allocation amount, floored at 0
+function getVisibleBonus(){
+  if(!S.hiddenActive||S.hiddenPct<=0)return computedBonus;
+  const grossUSD=getGrossUSD();
+  const hiddenAmt=grossUSD*(S.hiddenPct/100);
+  return Math.max(0,computedBonus-hiddenAmt);
+}
+function updateBonusDisplay(){
+  document.getElementById('bonusDisplay').textContent='$'+getVisibleBonus().toFixed(2);
+}
+function calcAccel(){
+  const pct=+document.getElementById('qAchPct').value||0;
+  let cls,lbl;
+  if(pct<50){cls='tier-none';lbl='Ispod 50%';}
+  else if(pct<80){cls='tier-1';lbl='50–80%';}
+  else if(pct<90){cls='tier-2';lbl='80–90%';}
+  else if(pct<100){cls='tier-3';lbl='90–100%';}
+  else{cls='tier-4';lbl='100%+';}
+  const el=document.getElementById('accelTier');el.className='tier-pill '+cls;el.textContent=lbl;
+}
+function applyAccel(){computedAccel=+document.getElementById('accelPayout').value||0;updateAccelDisplay();render();}
+function updateAccelDisplay(){document.getElementById('accelDisplay').textContent='$'+computedAccel.toFixed(2);}
+function isAccelMonth(){return ACCEL_MO.has(S.currentMonth);}
+function getGrossUSD(){
+  const base=+document.getElementById('incBase').value||0;
+  const logo=+document.getElementById('incLogo').value||0;
+  const accel=isAccelMonth()?computedAccel:0;
+  return base+computedBonus+logo+accel;
+}
+function getHiddenUSD(){return S.hiddenActive?getGrossUSD()*(S.hiddenPct/100):0;}
+function toggleCalc(){const p=document.getElementById('calcPanel'),a=document.getElementById('calcArrow');p.classList.toggle('open');a.textContent=p.classList.contains('open')?'▾':'▸';}
+
+// get per-month activation state for non-mandatory item in deposit mode
+function isActivatedThisMonth(id){
+  const key=activationKey();
+  return !!(S.monthActivations&&S.monthActivations[key]&&S.monthActivations[key][id]);
+}
+function toggleMonthActivation(id){
+  const key=activationKey();
+  if(!S.monthActivations)S.monthActivations={};
+  if(!S.monthActivations[key])S.monthActivations[key]={};
+  S.monthActivations[key][id]=!S.monthActivations[key][id];
+  render();
+}
+
+// ═══════════════ RENDER ═══════════════
+let lastChartArgs=[];
+function render(){
+  const depositMode=document.getElementById('depositToggle').checked;
+  S.currency=document.getElementById('currSel').value;
+  S.depositMode=depositMode;
+
+  document.getElementById('modeBadge').textContent=depositMode?'Depozit mod':'Normalan mod';
+  document.getElementById('modeBadge').className='mode-badge '+(depositMode?'deposit':'normal');
+  document.getElementById('depositSection').style.display=depositMode?'':'none';
+  document.getElementById('jovanContribRow').style.display=depositMode?'':'none';
+  document.getElementById('monthLabel').textContent=MO[S.currentMonth]+' '+S.currentYear;
+
+  const today=new Date();
+  const isCurMo=S.currentMonth===today.getMonth()&&S.currentYear===today.getFullYear();
+  const before25=today.getDate()<25;
+  const isRetro=S.currentYear<today.getFullYear()||(S.currentYear===today.getFullYear()&&S.currentMonth<today.getMonth());
+
+  document.getElementById('pendingAlert').style.display=(isCurMo&&before25)?'flex':'none';
+  document.getElementById('bonusPendingTag').textContent=(isCurMo&&before25)?' (očekivano)':'';
+  document.getElementById('accelPendingTag').textContent=(isCurMo&&before25)?' (očekivano)':'';
+  document.getElementById('accelFieldInc').style.display=isAccelMonth()?'':'none';
+  document.getElementById('currentQLabel').textContent=['Q4','Q1','Q1','Q1','Q2','Q2','Q2','Q3','Q3','Q3','Q4','Q4'][S.currentMonth];
+
+  const grossUSD=getGrossUSD();
+  const taxUSD=grossUSD*0.01;
+  GROUPS.forEach(g=>g.items.forEach(i=>{if(i.auto)i.val=taxUSD;}));
+  document.getElementById('taxDueVal').textContent=taxUSD.toFixed(2);
+  document.getElementById('taxAlert').style.display=(isCurMo&&today.getDate()<=15)?'flex':'none';
+
+  const hiddenUSD=getHiddenUSD();
+  const jovaVisibleUSD=getGrossUSD()-hiddenUSD;
+  const wifeUSD=toUSD(+document.getElementById('incWife').value||0,'RSD');
+  const jovanContrib500=depositMode?500:0;
+  const totalIncUSD=depositMode?wifeUSD+jovanContrib500:jovaVisibleUSD+wifeUSD;
+
+  // EXPENSE TALLIES
+  // In deposit mode: mandatory = always counted, non-mandatory = only if activated this month
+  let mandUSD=0,optUSD=0,savUSD=0;
+  GROUPS.forEach(g=>{
+    g.items.forEach(item=>{
+      if(item.decoy)return;
+      if(item.depositHide&&depositMode)return;
+      const uv=item.auto?item.val:toUSD(item.val,item.cur);
+      if(depositMode){
+        if(item.mandatory){mandUSD+=uv;}
+        else if(g.id==='savings'&&isActivatedThisMonth(item.id)){savUSD+=uv;}
+        else if(!item.mandatory&&isActivatedThisMonth(item.id)){optUSD+=uv;}
+      } else {
+        // Normal mode: use itemToggles
+        const toggled=S.itemToggles[item.id];
+        if(toggled===false)return;
+        if(g.id==='savings')savUSD+=uv;
+        else if(item.mandatory)mandUSD+=uv;
+        else optUSD+=uv;
+      }
+    });
+  });
+  if(depositMode)mandUSD+=jovanContrib500;
+
+  let plannedUSD=0;
+  S.plannedItems.forEach(p=>{if(p.active)plannedUSD+=toUSD(+p.amount||0,p.currency||'EUR');});
+
+  const totalExpUSD=mandUSD+optUSD+savUSD+plannedUSD;
+  // Deposit contribution = Jovan visible minus hidden minus $500 contrib minus planned extras
+  const depContribUSD=depositMode?Math.max(0,jovaVisibleUSD-500-plannedUSD):0;
+  const depContribEUR=fromUSD(depContribUSD,'EUR');
+  const balUSD=totalIncUSD-totalExpUSD;
+  lastTotalExpUSD=totalExpUSD;lastDepContribEUR=depContribEUR;
+
+  // DEPOSIT BAR
+  if(depositMode){
+    // Confirmed = base + all past months contributions
+    let pastContribEUR=0;
+    Object.keys(S.months).forEach(k=>{
+      const[y,mo]=k.split('-').map(Number);
+      const mDate=new Date(y,mo-1,25);
+      if(mDate<new Date(S.currentYear,S.currentMonth,25)){
+        pastContribEUR+=(S.months[k].depositContrib||0);
+      }
+    });
+    const confirmedEUR=S.depositBaseEUR+pastContribEUR;
+    const goal=20000;
+    const confPct=Math.min(100,(confirmedEUR/goal)*100);
+    const pendPct=Math.min(100-confPct,(depContribEUR/goal)*100);
+    document.getElementById('depFillConf').style.width=confPct.toFixed(2)+'%';
+    document.getElementById('depFillPend').style.left=confPct.toFixed(2)+'%';
+    document.getElementById('depFillPend').style.width=(isCurMo&&before25?pendPct:0).toFixed(2)+'%';
+    const showTotal=confirmedEUR+(isCurMo&&!before25?depContribEUR:0);
+    document.getElementById('depPct').textContent=Math.min(100,(showTotal/goal)*100).toFixed(1)+'%';
+    const remainEUR=Math.max(0,goal-showTotal);
+    const moLeft=depContribEUR>0?Math.ceil(remainEUR/depContribEUR):'—';
+    document.getElementById('depMeta').innerHTML=`
+      <span>Potvrđeno: <strong>€${Math.round(confirmedEUR).toLocaleString('sr-RS')}</strong>${isCurMo&&before25?` + <em style="color:var(--amber)">€${Math.round(depContribEUR).toLocaleString('sr-RS')} (čeka 25-og)</em>`:''}</span>
+      <span>Preostalo: <strong>€${Math.round(remainEUR).toLocaleString('sr-RS')}</strong></span>
+      <span>Procena: <strong>${moLeft} mes.</strong></span>
+    `;
+  }
+
+  // Projects total
+  let projTotal=0;
+  S.projectItems.forEach(p=>{projTotal+=toUSD(+p.cost||0,p.currency||'EUR');});
+
+  // METRICS
+  document.getElementById('metricsGrid').innerHTML=`
+    <div class="metric"><div class="metric-label">Ukupan prihod</div><div class="metric-value ${depositMode?'c-yellow':'c-green'}">${fmt(totalIncUSD)}</div><div class="metric-sub">${depositMode?'Jelena + $500':'Oba prihoda'}</div></div>
+    <div class="metric"><div class="metric-label">Obavezni troškovi</div><div class="metric-value c-red">${fmt(mandUSD)}</div></div>
+    <div class="metric"><div class="metric-label">Opcionalni troškovi</div><div class="metric-value c-text2">${fmt(optUSD)}</div></div>
+    <div class="metric"><div class="metric-label">Štednja</div><div class="metric-value c-blue">${fmt(savUSD)}</div></div>
+    <div class="metric"><div class="metric-label">Vanredni troškovi</div><div class="metric-value c-purple">${fmt(plannedUSD)}</div></div>
+    <div class="metric"><div class="metric-label">Bilans</div><div class="metric-value ${balUSD>=0?'c-green':'c-red'}">${fmt(balUSD)}</div></div>
+    <div class="metric"><div class="metric-label">Porez firme</div><div class="metric-value c-amber">$${taxUSD.toFixed(2)}</div><div class="metric-sub">Do 15-og</div></div>
+    <div class="metric"><div class="metric-label">Projekti</div><div class="metric-value c-blue">${fmt(projTotal)}</div><div class="metric-sub">Ukupno potrebno</div></div>
+    ${depositMode?`<div class="metric"><div class="metric-label">Ka depozitu</div><div class="metric-value c-green">${fmt(depContribUSD)}</div><div class="metric-sub">Ovaj mesec</div></div>`:''}
+  `;
+
+  renderExpList(depositMode);
+  renderPlanned();renderProjects();
+  lastChartArgs=[totalIncUSD,mandUSD,optUSD,savUSD,plannedUSD,jovaVisibleUSD,wifeUSD,balUSD,depositMode];
+  renderCharts(...lastChartArgs);
+  renderHistory();
+  if(S.pinUnlocked)renderPrivHist();
+  ls_save();
+}
+
+function renderExpList(depositMode){
+  const list=document.getElementById('expList');list.innerHTML='';
+  GROUPS.forEach(g=>{
+    let anyV=false;
+    const gEl=document.createElement('div');gEl.className='exp-group';
+    const hdr=document.createElement('div');hdr.className='exp-group-label';hdr.textContent=g.label;gEl.appendChild(hdr);
+    g.items.forEach(item=>{
+      if(item.depositHide&&depositMode)return;
+      anyV=true;
+      const uv=item.auto?item.val:toUSD(item.val,item.cur);
+      const isMandatory=item.mandatory;
+      const isShaded=depositMode&&SHADE_IDS.has(item.id)&&!item.mandatory;
+      const isActivated=isActivatedThisMonth(item.id);
+
+      const row=document.createElement('div');
+      row.className='exp-row'+(isShaded&&!isActivated?' shaded':'');
+
+      // Checkbox: mandatory=disabled+checked, non-mandatory in deposit=no checkbox, normal mode=checkbox
+      const cb=document.createElement('input');cb.type='checkbox';cb.className='exp-toggle';
+      if(depositMode){
+        if(isMandatory){cb.checked=true;cb.disabled=true;}
+        else{cb.style.display='none';}// replaced by activate btn
+      } else {
+        const tog=S.itemToggles[item.id];
+        cb.checked=tog!==false;
+        cb.onchange=()=>{S.itemToggles[item.id]=cb.checked;render();};
+      }
+
+      const nameWrap=document.createElement('span');nameWrap.className='exp-name';
+      nameWrap.textContent=item.label;
+      if(item.meta){const m=document.createElement('span');m.className='exp-meta';m.textContent=item.meta;nameWrap.appendChild(m);}
+      if(item.decoy){nameWrap.style.cursor='pointer';nameWrap.addEventListener('click',handleDecoy);}
+
+      const amtEl=document.createElement('span');
+      amtEl.className='exp-amount '+(g.id==='savings'?'savings':isMandatory?'mandatory':'optional');
+      amtEl.textContent=fmt(uv);
+
+      const tag=document.createElement('span');tag.className='obavezno-tag';tag.textContent=isMandatory?'O':'';
+
+      row.appendChild(cb);row.appendChild(nameWrap);row.appendChild(amtEl);row.appendChild(tag);
+
+      // In deposit mode, non-mandatory get "Uključi" button
+      if(depositMode&&!isMandatory&&!item.depositHide){
+        const btn=document.createElement('button');
+        btn.className='activate-btn'+(isActivated?' on':'');
+        btn.textContent=isActivated?'✓ Aktiv.':'+ Uključi';
+        btn.onclick=()=>toggleMonthActivation(item.id);
+        row.appendChild(btn);
+      }
+
+      gEl.appendChild(row);
+    });
+    if(anyV)list.appendChild(gEl);
+  });
+}
+
+// ═══════════════ PLANNED ═══════════════
+function renderPlanned(){
+  const c=document.getElementById('plannedList');c.innerHTML='';
+  let total=0;
+  S.plannedItems.forEach((p,i)=>{
+    if(p.active)total+=toUSD(+p.amount||0,p.currency||'EUR');
+    const d=document.createElement('div');d.className='list-item';
+    d.innerHTML=`<input type="checkbox" class="exp-toggle" ${p.active?'checked':''}><input type="text" value="${p.name||''}" placeholder="Opis troška"><input type="number" value="${p.amount||''}" placeholder="Iznos" style="text-align:right"><select><option ${(p.currency||'EUR')==='EUR'?'selected':''}>EUR</option><option ${p.currency==='USD'?'selected':''}>USD</option><option ${p.currency==='RSD'?'selected':''}>RSD</option></select><button class="rm-btn">×</button>`;
+    d.querySelector('input[type=checkbox]').onchange=e=>{S.plannedItems[i].active=e.target.checked;renderPlanned();render();};
+    d.querySelector('input[type=text]').onblur=e=>{S.plannedItems[i].name=e.target.value;};
+    d.querySelector('input[type=number]').onblur=e=>{S.plannedItems[i].amount=+e.target.value||0;renderPlanned();render();};
+    d.querySelector('select').onchange=e=>{S.plannedItems[i].currency=e.target.value;renderPlanned();render();};
+    d.querySelector('.rm-btn').onclick=()=>{S.plannedItems.splice(i,1);renderPlanned();render();};
+    c.appendChild(d);
+  });
+  document.getElementById('plannedTotal').textContent=fmt(total);
+}
+function addPlanned(){S.plannedItems.push({name:'',amount:0,currency:'EUR',active:false});renderPlanned();}
+
+// ═══════════════ PROJECTS ═══════════════
+function renderProjects(){
+  const c=document.getElementById('projectList');c.innerHTML='';
+  let total=0;
+  S.projectItems.forEach((p,i)=>{
+    total+=toUSD(+p.cost||0,p.currency||'EUR');
+    const d=document.createElement('div');d.className='list-item';
+    d.innerHTML=`<input type="text" value="${p.name||''}" placeholder="Naziv projekta" style="flex:2"><input type="number" value="${p.cost||''}" placeholder="Iznos" style="text-align:right"><select><option ${(p.currency||'EUR')==='EUR'?'selected':''}>EUR</option><option ${p.currency==='USD'?'selected':''}>USD</option><option ${p.currency==='RSD'?'selected':''}>RSD</option></select><button class="rm-btn">×</button>`;
+    d.querySelector('input[type=text]').onblur=e=>{S.projectItems[i].name=e.target.value;};
+    d.querySelector('input[type=number]').onblur=e=>{S.projectItems[i].cost=+e.target.value||0;renderProjects();render();};
+    d.querySelector('select').onchange=e=>{S.projectItems[i].currency=e.target.value;renderProjects();render();};
+    d.querySelector('.rm-btn').onclick=()=>{S.projectItems.splice(i,1);renderProjects();render();};
+    c.appendChild(d);
+  });
+  document.getElementById('projectTotal').textContent=fmt(total);
+}
+function addProject(){S.projectItems.push({name:'',cost:0,currency:'EUR'});renderProjects();}
+
+// ═══════════════ HISTORY ═══════════════
+function renderHistory(){
+  const body=document.getElementById('histBody');body.innerHTML='';
+  const keys=Object.keys(S.months).sort().reverse().slice(0,18);
+  if(!keys.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:12px">Još nema podataka.</td></tr>';return;}
+  keys.forEach(key=>{
+    const m=S.months[key];const[y,mo]=key.split('-');
+    const lbl=MO[parseInt(mo)-1]+' '+y;
+    const gross=m.grossUSD||0,exp=m.totalExpUSD||0,bal=gross-exp,dep=m.depositContrib||0;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-weight:600;color:var(--text)">${lbl}</td><td class="c-green">$${Math.round(gross).toLocaleString('sr-RS')}</td><td class="c-red">$${Math.round(exp).toLocaleString('sr-RS')}</td><td class="${bal>=0?'c-green':'c-red'}">$${Math.round(bal).toLocaleString('sr-RS')}</td><td class="c-blue">€${Math.round(dep).toLocaleString('sr-RS')}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ═══════════════ PRIVATE HISTORY ═══════════════
+function renderPrivHist(){
+  const body=document.getElementById('privHistBody');body.innerHTML='';
+  const keys=Object.keys(S.months).sort().reverse().slice(0,24);
+  let totalPriv=0;
+  keys.forEach(key=>{
+    const m=S.months[key];const[y,mo]=key.split('-');
+    const lbl=MO[parseInt(mo)-1]+' '+y;
+    const gross=m.grossUSD||0;
+    const privPct=S.hiddenPct||0;
+    const privAmt=gross*(privPct/100);
+    totalPriv+=privAmt;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${lbl}</td><td>$${gross.toFixed(2)}</td><td style="color:var(--blue)">$${privAmt.toFixed(2)}</td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('privHistTotal').textContent='$'+totalPriv.toFixed(2);
+}
+
+// ═══════════════ CHARTS ═══════════════
+let incChart,expChart,flowChart;
+function renderCharts(incUSD,mandUSD,optUSD,savUSD,planUSD,jovUSD,wifeUSD,balUSD,depositMode){
+  const c=S.currency,cv=v=>Math.round(fromUSD(v,c));
+  const dark=S.dark,gridC=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)',tickC=dark?'#666':'#bbb';
+  const jColor=dark?'#00b300':'#008000',jeColor='#FFF700';
+
+  if(incChart)incChart.destroy();if(expChart)expChart.destroy();if(flowChart)flowChart.destroy();
+
+  const iData=depositMode?[cv(wifeUSD),cv(500)]:[cv(jovUSD),cv(wifeUSD)];
+  const iLabels=depositMode?['Jelena plata','Jovanov doprinos']:['Jovan','Jelena'];
+  const iColors=[jColor,jeColor];
+  const iTotal=iData.reduce((a,b)=>a+b,0)||1;
+  document.getElementById('incLegend').innerHTML=iLabels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${iColors[i]};border:1px solid rgba(0,0,0,.15)"></div>${l}: ${iData[i].toLocaleString('sr-RS')}</div>`).join('');
+  const doughnutDLPlugin={
+    display:ctx=>(ctx.dataset.data[ctx.dataIndex]/(iTotal||1))>=0.05,
+    color:dark?'#e8e8e4':'#1a1a18',
+    font:{size:10,weight:'bold',family:'Georgia,serif'},
+    anchor:'center',align:'center',
+    formatter:v=>{const abs=Math.abs(v);if(abs>=1000000)return(v/1000000).toFixed(1)+'M';if(abs>=1000)return(v/1000).toFixed(0)+'k';return v.toLocaleString('sr-RS');}
+  };
+  incChart=new Chart(document.getElementById('incChart'),{
+    type:'doughnut',data:{labels:iLabels,datasets:[{data:iData,backgroundColor:iColors,borderWidth:2,borderColor:dark?'#1e1e1e':'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:doughnutDLPlugin},cutout:'65%'},
+    plugins:[ChartDataLabels]
+  });
+
+  const eData=[cv(mandUSD),cv(optUSD),cv(savUSD),cv(planUSD)];
+  const eLabels=['Obavezni','Opcionalni','Štednja','Vanredni'];
+  const eColors=['#e05445','#4a90d9','#2dbd8a','#9b7de0'];
+  const eTotal=eData.reduce((a,b)=>a+b,0)||1;
+  document.getElementById('expLegend').innerHTML=eLabels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${eColors[i]}"></div>${l}: ${eData[i].toLocaleString('sr-RS')}</div>`).join('');
+  const expDLPlugin={
+    display:ctx=>(ctx.dataset.data[ctx.dataIndex]/eTotal)>=0.05,
+    color:'#fff',
+    font:{size:10,weight:'bold',family:'Georgia,serif'},
+    anchor:'center',align:'center',
+    formatter:v=>{const abs=Math.abs(v);if(abs>=1000000)return(v/1000000).toFixed(1)+'M';if(abs>=1000)return(v/1000).toFixed(0)+'k';return v.toLocaleString('sr-RS');}
+  };
+  expChart=new Chart(document.getElementById('expChart'),{
+    type:'doughnut',data:{labels:eLabels,datasets:[{data:eData,backgroundColor:eColors,borderWidth:2,borderColor:dark?'#1e1e1e':'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:expDLPlugin},cutout:'65%'},
+    plugins:[ChartDataLabels]
+  });
+
+  // Flow chart with datalabels
+  const fData=[cv(incUSD),cv(mandUSD),cv(optUSD),cv(savUSD),cv(planUSD),cv(balUSD)];
+  const fLabels=['Prihod','Obavezni','Opcioni','Štednja','Vanredni','Bilans'];
+  const fColors=[jColor,'#e05445','#4a90d9','#2dbd8a','#9b7de0',balUSD>=0?'#2dbd8a':'#e05445'];
+  const maxVal=Math.max(...fData.map(Math.abs));
+  flowChart=new Chart(document.getElementById('flowChart'),{
+    type:'bar',
+    data:{labels:fLabels,datasets:[{data:fData,backgroundColor:fColors,borderWidth:0,borderRadius:4}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          anchor:'end',align:'end',
+          color:dark?'#ccc':'#555',
+          font:{size:10,weight:'bold',family:'Georgia,serif'},
+          formatter:v=>{
+            const abs=Math.abs(v);
+            if(abs>=1000000)return(v/1000000).toFixed(1)+'M';
+            if(abs>=1000)return(v/1000).toFixed(0)+'k';
+            return v.toLocaleString('sr-RS');
+          },
+          clip:false
+        }
+      },
+      layout:{padding:{top:20}},
+      scales:{
+        x:{ticks:{color:tickC,font:{size:10},maxRotation:30,autoSkip:false},grid:{color:gridC}},
+        y:{ticks:{color:tickC,font:{size:10},callback:v=>v.toLocaleString('sr-RS')},grid:{color:gridC}}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+}
+
+// ═══════════════ PIN / DECOY ═══════════════
+let pinBuf='',bankTimer=null,bankCount=0;
+function handleDecoy(e){
+  e.stopPropagation();bankCount++;clearTimeout(bankTimer);
+  bankTimer=setTimeout(()=>{bankCount=0;},2500);
+  if(bankCount>=4){bankCount=0;openPin();}
+}
+function openPin(){
+  pinBuf='';updatePinDots();
+  document.getElementById('pinMsg').textContent=S.pin?'Unesi PIN':'Postavi novi PIN (4 cifre)';
+  document.getElementById('pinMsg').className='pin-msg';
+  document.getElementById('hiddenPanel').style.display='none';
+  document.getElementById('pinOverlay').classList.add('open');
+}
+function closePinPanel(){
+  document.getElementById('pinOverlay').classList.remove('open');
+  document.getElementById('hiddenPanel').style.display='none';
+  pinBuf='';updatePinDots();
+  // hiddenActive stays true — effect persists when locked
+  render();
+}
+function pk(k){
+  if(k==='x'){pinBuf=pinBuf.slice(0,-1);}
+  else if(k==='ok'){
+    if(pinBuf.length<4){document.getElementById('pinMsg').textContent='Unesi 4 cifre';return;}
+    if(!S.pin){S.pin=pinBuf;ls_save();document.getElementById('pinMsg').textContent='PIN postavljen!';pinBuf='';setTimeout(unlockPin,500);}
+    else if(pinBuf===S.pin){pinBuf='';unlockPin();}
+    else{pinBuf='';document.getElementById('pinMsg').className='pin-msg error';document.getElementById('pinMsg').textContent='Pogrešan PIN';}
+  }else{if(pinBuf.length<4)pinBuf+=k;}
+  updatePinDots();
+}
+function updatePinDots(){for(let i=0;i<4;i++)document.getElementById('pd'+i).className='pin-dot'+(i<pinBuf.length?' filled':'');}
+function unlockPin(){
+  S.pinUnlocked=true;S.hiddenActive=true;
+  document.getElementById('hiddenPanel').style.display='block';
+  document.getElementById('hiddenPct').value=S.hiddenPct;
+  document.getElementById('hiddenAmt').textContent='$'+(getGrossUSD()*S.hiddenPct/100).toFixed(2);
+  document.getElementById('pinMsg').textContent='';
+  renderPrivHist();
+}
+function saveHiddenPct(){
+  S.hiddenPct=+document.getElementById('hiddenPct').value||0;
+  document.getElementById('hiddenAmt').textContent='$'+(getGrossUSD()*S.hiddenPct/100).toFixed(2);
+  ls_save();render();
+}
+
+// ═══════════════ GIST ═══════════════
+function toggleGistSetup(){const el=document.getElementById('gistSetup');el.style.display=el.style.display==='none'?'block':'none';}
+function saveGistToken(){
+  const t=document.getElementById('ghToken').value.trim();
+  if(!t){document.getElementById('gistStatus').textContent='Unesite validan token.';return;}
+  S.ghToken=t;ls_save();document.getElementById('gistStatus').textContent='Token sačuvan. Testiram...';
+  gistPull().then(()=>{document.getElementById('gistStatus').textContent='Veza uspešna!';});
+}
+async function gistPush(){
+  if(!S.ghToken)return;
+  try{
+    const body={months:S.months,depositBaseEUR:S.depositBaseEUR,monthActivations:S.monthActivations};
+    const payload={description:'kucni-budzet-data',public:false,files:{'budzet.json':{content:JSON.stringify(body)}}};
+    let url='https://api.github.com/gists',method='POST';
+    if(S.gistId){url+=`/${S.gistId}`;method='PATCH';}
+    const r=await fetch(url,{method,headers:{'Authorization':`token ${S.ghToken}`,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();if(d.id&&!S.gistId){S.gistId=d.id;ls_save();}
+    showGistMsg('Sačuvano ✓',2000);
+  }catch(e){showGistMsg('Greška pri sinhronizaciji',3000);}
+}
+async function gistPull(){
+  if(!S.ghToken)return;
+  try{
+    let url='https://api.github.com/gists';
+    if(S.gistId)url+=`/${S.gistId}`;
+    const r=await fetch(url,{headers:{'Authorization':`token ${S.ghToken}`}});
+    if(S.gistId){
+      const d=await r.json();
+      const content=d.files?.['budzet.json']?.content;
+      if(content){const p=JSON.parse(content);S.months={...S.months,...p.months};if(p.depositBaseEUR)S.depositBaseEUR=p.depositBaseEUR;if(p.monthActivations)S.monthActivations={...S.monthActivations,...p.monthActivations};ls_save();render();}
+    }else{
+      const gists=await r.json();const found=gists.find(g=>g.description==='kucni-budzet-data');
+      if(found){S.gistId=found.id;ls_save();await gistPull();}
+    }
+  }catch(e){}
+}
+function showGistMsg(msg,ms){
+  const el=document.getElementById('gistSyncAlert');document.getElementById('gistSyncMsg').textContent=msg;
+  el.style.display='flex';setTimeout(()=>{el.style.display='none';},ms);
+}
+
+function onCurrChange(){S.currency=document.getElementById('currSel').value;render();}
+
+// ═══════════════ INIT ═══════════════
+document.getElementById('depositToggle').checked=S.depositMode!==false;
+document.getElementById('currSel').value=S.currency||'RSD';
+if(S.ghToken)gistPull();
+loadMonthSnap();fetchRates();
+</script>
+</body>
+</html>
